@@ -4,10 +4,6 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from openai import OpenAI
 import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file if it exists (for local development)
-load_dotenv()
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
@@ -75,4 +71,8 @@ def static_proxy(path):
     return send_from_directory('static', path)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Get port from environment variable or default to 5000
+    port = int(os.getenv('PORT', 5000))
+    # Only run in debug mode if explicitly set in environment
+    debug = os.getenv('FLASK_ENV') == 'development'
+    app.run(host='0.0.0.0', port=port, debug=debug)
