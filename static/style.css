@@ -75,11 +75,29 @@
  * Base Styles
  *==================================*/
 
+html, body {
+    background: transparent !important;
+}
+
+#chatWindow, .chat-window, .transparent-bg {
+    background: transparent !important;
+    box-shadow: none;
+}
+
+/* Override Tailwind bg-* for chat window if needed */
+#chatWindow.bg-white, .chat-window.bg-white {
+    background: transparent !important;
+}
+
+/* For main chat container, use semi-transparent white for content, but allow outer to be transparent */
+.bg-chat-bg, .bg-white.bg-opacity-90 {
+    background: rgba(255,255,255,0.9) !important;
+}
+
 html {
     font-size: var(--font-size-base);
     font-family: var(--font-family-base);
     color: var(--color-text);
-    background-color: var(--color-background);
     -webkit-font-smoothing: antialiased;
 }
 
