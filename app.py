@@ -4,9 +4,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from openai import OpenAI
 import os
+from email.message import EmailMessage
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__, 
     static_folder='static',
@@ -89,19 +88,16 @@ def feedback():
     if not (gmail_user and gmail_pass and to_email):
         return jsonify({'success': False, 'error': 'Email credentials not set'}), 500
 
-    subject = f"BidGPT Feedback - Rating: {rating}"
-    body = f"Rating: {rating}\nFeedback: {feedback_text}"
-
-    msg = MIMEMultipart()
+    msg = EmailMessage()
+    msg['Subject'] = f"BidGPT Feedback - Rating: {rating}"
     msg['From'] = gmail_user
     msg['To'] = to_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
+    msg.set_content(f"Rating: {rating}\nFeedback: {feedback_text}")
 
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
             server.login(gmail_user, gmail_pass)
-            server.sendmail(gmail_user, to_email, msg.as_string())
+            server.send_message(msg)
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
