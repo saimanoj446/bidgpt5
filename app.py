@@ -6,6 +6,7 @@ from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
+# Load environment variables from .env file if it exists (for local development)
 load_dotenv()
 
 app = Flask(__name__, static_folder='static')
@@ -23,13 +24,16 @@ def load_knowledge_base(path='knowledge_base.txt'):
 kb_entries = load_knowledge_base()
 vectorizer = TfidfVectorizer().fit(kb_entries)
 
+# Get API key from environment variable (works with both local .env and Render.com)
+api_key = os.getenv('GROQ_API_KEY')
+if not api_key:
+    raise ValueError("GROQ_API_KEY environment variable is not set")
+
 # Groq client
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
-    api_key=os.environ.get("GROQ_API_KEY")
+    api_key=api_key
 )
-
-print("GROQ_API_KEY:", os.environ.get("GROQ_API_KEY"))
 
 @app.route('/chat', methods=['POST'])
 def chat():
