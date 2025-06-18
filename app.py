@@ -5,7 +5,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from openai import OpenAI
 import os
 
-app = Flask(__name__, static_folder='static')
+app = Flask(__name__, 
+    static_folder='static',
+    static_url_path='')  # This makes static files available at root URL
 CORS(app)
 
 # Load and parse knowledge base
@@ -64,11 +66,11 @@ def chat():
 # Serve static files (frontend)
 @app.route('/')
 def index():
-    return send_from_directory('static', 'index.html')
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/<path:path>')
 def static_proxy(path):
-    return send_from_directory('static', path)
+    return send_from_directory(app.static_folder, path)
 
 if __name__ == '__main__':
     # Get port from environment variable or default to 5000
