@@ -106,9 +106,7 @@ def feedback():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-if __name__ == '__main__':
-    # Get port from environment variable or default to 5000
+if __name__ == '__main__' and not os.environ.get('RENDER'):
     port = int(os.getenv('PORT', 5000))
-    # Only run in debug mode if explicitly set in environment
-    debug = os.getenv('FLASK_ENV') == 'development'
+    debug = True
     app.run(host='0.0.0.0', port=port, debug=debug)
