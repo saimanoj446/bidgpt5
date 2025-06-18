@@ -12,6 +12,7 @@ class BidGPTChatbot {
         this.currentBotTypingElement = null;
         this.currentBotTypingMessage = '';
         this.currentBotTypingIndex = 0;
+        this.apiEndpoint = '/chat';  // Updated to use relative path
         this.init();
     }
 
@@ -308,62 +309,47 @@ class BidGPTChatbot {
     async handleSendMessage() {
         const chatInput = document.getElementById('chatInput');
         const message = chatInput.value.trim();
-
+        
         if (!message) return;
-
-        // If user types "stop", stop the bot response
-        if (message.toLowerCase() === 'stop') {
-            this.handleStopBot();
-            chatInput.value = '';
-            chatInput.focus();
-            return;
-        }
-
+        
         // Clear input
         chatInput.value = '';
-        chatInput.focus();
-
-        // Prevent chat window from closing on first message
-        // Remove or comment out any code that hides the chat window here
-
-        // Add user message to chat
+        
+        // Add user message
         this.addUserMessage(message);
-
+        
         // Show typing indicator
         this.showTypingIndicator();
-
+        this.showStopButton();
+        
         try {
-            // Send the full message history for context (for follow-up support)
-            // Only send the last N messages for efficiency (e.g., last 10 exchanges)
-            const historyToSend = this.messages.slice(-5);
-
-            const response = await fetch('http://127.0.0.1:5000/chat', {
+            const response = await fetch(this.apiEndpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    message: message,
-                    history: historyToSend
-                })
+                body: JSON.stringify({ message }),
             });
 
             if (!response.ok) {
-                throw new Error('Failed to get response');
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
             
-            // Hide typing indicator
+            if (this.stopRequested) {
+                this.stopRequested = false;
+                return;
+            }
+
             this.hideTypingIndicator();
-
-            // Add bot response to chat
+            this.hideStopButton();
             this.addBotMessage(data.response);
-
         } catch (error) {
             console.error('Error:', error);
             this.hideTypingIndicator();
-            this.addBotMessage("I apologize, but I'm having trouble connecting to the server right now. Please try again later.");
+            this.hideStopButton();
+            this.showError('Failed to get response. Please try again.');
         }
     }
 
@@ -555,6 +541,18 @@ class BidGPTChatbot {
                 }
             }, 300);
         }, 5000);
+    }
+
+    showError(message) {
+        const errorToast = document.getElementById('errorToast');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        errorMessage.textContent = message;
+        errorToast.classList.remove('translate-y-full', 'opacity-0');
+        
+        setTimeout(() => {
+            errorToast.classList.add('translate-y-full', 'opacity-0');
+        }, 3000);
     }
 
     escapeHtml(text) {
