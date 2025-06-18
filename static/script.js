@@ -250,45 +250,37 @@ class BidGPTChatbot {
         console.log('Selected rating:', rating); // Debug line to verify rating is being set
     }
 
-    handleFeedbackSubmit() {
-        const feedbackText = document.getElementById('feedbackText');
-        const feedback = feedbackText.value.trim();
-        
-        if (!feedback) {
-            this.showNotification('Please enter your feedback before submitting.', 'warning');
-            return;
-        }
-
-        if (!this.currentRating) {
-            this.showNotification('Please select a rating before submitting.', 'warning');
-            return;
-        }
-
-        // Store feedback text and submit
-        this.feedbackText = feedback;
-        this.submitFinalFeedback();
-    }
-
-    submitFinalFeedback() {
-        const feedbackText = document.getElementById('feedbackText');
+    async handleFeedbackSubmit() {
+        const feedbackText = document.getElementById('feedbackText').value.trim();
         const submitButton = document.getElementById('submitFeedback');
-        
-        submitButton.classList.add('btn-loading');
-        
-        setTimeout(() => {
-            this.showNotification('Thank you for your feedback!', 'success');
-            this.addBotMessage('Thank you for your feedback! We appreciate your input and will use it to improve our services. 🙏');
-            
-            // Reset everything
-            feedbackText.value = '';
-            feedbackText.disabled = false;
-            submitButton.style.display = 'block';
-            submitButton.classList.remove('btn-loading');
-            this.currentRating = 0;
-            this.feedbackText = '';
-            
-            this.closeFeedbackModal();
-        }, 1500);
+        if (!this.currentRating) {
+            this.showError('Please select a rating.');
+            return;
+        }
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending...';
+        try {
+            const response = await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rating: this.currentRating, // 1-5
+                    feedback: feedbackText
+                })
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.showNotification('Thank you for your feedback!', 'success');
+                this.closeFeedbackModal();
+            } else {
+                this.showError('Failed to send feedback.');
+            }
+        } catch (e) {
+            this.showError('Failed to send feedback.');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Submit Feedback';
+        }
     }
 
     handleStopBot() {
