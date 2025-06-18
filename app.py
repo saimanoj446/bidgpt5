@@ -4,6 +4,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from openai import OpenAI
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 app = Flask(__name__, 
     static_folder='static',
@@ -71,6 +74,37 @@ def index():
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory(app.static_folder, path)
+
+@app.route('/feedback', methods=['POST'])
+def feedback():
+    data = request.json
+    rating = data.get('rating')
+    feedback_text = data.get('feedback')
+
+    # Prepare email
+    gmail_user = os.getenv('FEEDBACK_GMAIL_USER')
+    gmail_pass = os.getenv('FEEDBACK_GMAIL_PASS')
+    to_email = os.getenv('FEEDBACK_GMAIL_TO', gmail_user)
+
+    if not (gmail_user and gmail_pass and to_email):
+        return jsonify({'success': False, 'error': 'Email credentials not set'}), 500
+
+    subject = f"BidGPT Feedback - Rating: {rating}"
+    body = f"Rating: {rating}\nFeedback: {feedback_text}"
+
+    msg = MIMEMultipart()
+    msg['From'] = gmail_user
+    msg['To'] = to_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
+
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(gmail_user, gmail_pass)
+            server.sendmail(gmail_user, to_email, msg.as_string())
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Get port from environment variable or default to 5000
