@@ -50,21 +50,6 @@ class BidGPTChatbot {
     } 
 
     bindEvents() {
-        // Chat toggle functionality
-        const chatButton = document.getElementById('chatButton');
-        const closeChat = document.getElementById('closeChat');
-        const chatWindow = document.getElementById('chatWindow');
-
-        chatButton.addEventListener('click', () => this.toggleChat());
-        closeChat.addEventListener('click', () => this.toggleChat());
-    
-        // Close chat when clicking backdrop on mobile
-        chatWindow.addEventListener('click', (e) => {
-            if (e.target === chatWindow) {
-                this.toggleChat();
-            }
-        });
-
         // Feedback modal functionality
         const provideFeedbackBtn = document.getElementById('provideFeedbackBtn');
         const feedbackModal = document.getElementById('feedbackModal');
@@ -120,46 +105,13 @@ class BidGPTChatbot {
             if (e.key === 'Escape') {
                 if (this.isFeedbackModalOpen) {
                     this.closeFeedbackModal();
-                } else if (this.isOpen) {
-                    this.toggleChat();
                 }
             }
         });
     }
 
     toggleChat() {
-        const chatWindow = document.getElementById('chatWindow');
-        const pulsingRing = document.querySelector('.animate-ping');
-        
-        if (!this.isOpen) {
-            // Show chat window with pop-up animation
-            chatWindow.style.display = 'block';
-            // Trigger reflow
-            chatWindow.offsetHeight;
-            chatWindow.classList.remove('scale-0', 'opacity-0');
-            // Stop pulsing animation
-            pulsingRing.style.display = 'none';
-            this.isOpen = true;
-            
-            // Focus on input after animation
-            setTimeout(() => {
-                const chatInput = document.getElementById('chatInput');
-                chatInput.focus();
-            }, 300);
-        } else {
-            // Hide chat window with reverse pop-up animation
-            chatWindow.classList.add('scale-0', 'opacity-0');
-            // Restore pulsing animation
-            pulsingRing.style.display = 'block';
-            setTimeout(() => {
-                chatWindow.style.display = 'none';
-            }, 300); // Match the duration in the CSS transition
-            this.isOpen = false;
-        }
-            const sendBtn = document.getElementById('sendMessage');
-
-        // Toggle visibility
-        // chatWindow.classList.toggle('hidden');
+        // REMOVED: No toggling, chat is always open
     }
 
     openFeedbackModal() {
