@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatMessages = document.getElementById('chat-messages');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const closeButton = document.getElementById('close-chat-button');
+    const chatContainer = document.querySelector('.chat-container');
 
     // Replace this with your Render app URL
     const API_URL = 'https://your-render-app-url.onrender.com/chat';
@@ -14,6 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle send button click
     sendButton.addEventListener('click', sendMessage);
+
+    // Handle close button click
+    closeButton.addEventListener('click', () => {
+        chatContainer.style.display = 'none';
+    });
 
     // Handle Enter key press
     userInput.addEventListener('keypress', (e) => {
