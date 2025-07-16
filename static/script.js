@@ -322,30 +322,73 @@ class BidGPTChatbot {
 
         const typeNextChar = () => {
             if (this.stopRequested) {
-                // Render what has been typed so far, stop typing
                 p.innerHTML = this.renderMarkdown(message.slice(0, index));
                 this.hideStopButton();
                 this.isBotResponding = false;
                 this.updateSendButtonIcon();
                 this.messages.push({ type: 'bot', message: message.slice(0, index), timestamp: new Date() });
+                this.addTranslateButton(messageElement, message.slice(0, index));
                 return;
             }
             if (index < message.length) {
-                // Render markdown for the substring up to current index
                 p.innerHTML = this.renderMarkdown(message.slice(0, index + 1));
                 index++;
                 this.scrollToBottom();
                 this.currentBotTyping = setTimeout(typeNextChar, delay);
             } else {
-                // Once typing is done, render full markdown
                 p.innerHTML = this.renderMarkdown(message);
                 this.hideStopButton();
                 this.isBotResponding = false;
                 this.updateSendButtonIcon();
                 this.messages.push({ type: 'bot', message, timestamp: new Date() });
+                this.addTranslateButton(messageElement, message);
             }
         };
         typeNextChar();
+    }
+
+    addTranslateButton(messageElement, message) {
+        // Only add for bot messages
+        const botBubble = messageElement.querySelector('.message-bubble-bot');
+        if (!botBubble) return;
+        // Remove any existing translate area
+        let existing = botBubble.querySelector('.translate-area');
+        if (existing) existing.remove();
+        // Create area
+        const area = document.createElement('div');
+        area.className = 'translate-area mt-2';
+        area.innerHTML = `
+            <input type="text" class="language-input bg-gray-100 px-2 py-1 rounded mr-2" placeholder="Enter language (e.g. Hindi, French)" style="font-size: 0.9em; width: 40%;" />
+            <button class="bg-blue-100 text-blue-800 px-3 py-1 rounded hover:bg-blue-200 transition" style="font-size: 0.9em;">Translate</button>
+            <div class="translated-text text-sm text-blue-700 mt-1"></div>
+        `;
+        botBubble.appendChild(area);
+        const btn = area.querySelector('button');
+        const langInput = area.querySelector('.language-input');
+        const translatedDiv = area.querySelector('.translated-text');
+        btn.onclick = async () => {
+            const targetLang = langInput.value.trim() || 'Hindi';
+            btn.disabled = true;
+            btn.textContent = 'Translating...';
+            translatedDiv.textContent = '';
+            try {
+                const res = await fetch('/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: message, target_lang: targetLang })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    translatedDiv.textContent = data.translated;
+                } else {
+                    translatedDiv.textContent = 'Translation failed.';
+                }
+            } catch (e) {
+                translatedDiv.textContent = 'Translation error.';
+            }
+            btn.disabled = false;
+            btn.textContent = 'Translate';
+        };
     }
     createMessageElement(message, type) {
         const messageDiv = document.createElement('div');
