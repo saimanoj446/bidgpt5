@@ -1,3 +1,4 @@
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -6,9 +7,26 @@ from openai import OpenAI
 import os
 from email.message import EmailMessage
 import smtplib
+import requests
+
+from dotenv import load_dotenv
+load_dotenv()
+
+# Google Cloud Translate
+ # Removed Google Translate imports and setup
+def groq_translate(text, target_lang, client):
+    prompt = f"Translate the following text to {target_lang}: {text}"
+    completion = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[
+            {"role": "system", "content": "You are a translation assistant."},
+            {"role": "user", "content": prompt}
+        ]
+    )
+    return completion.choices[0].message.content.strip()
 
 app = Flask(__name__, 
-    static_folder='static',
+    static_folder=os.path.join(os.path.dirname(__file__), 'static'),
     static_url_path='')  # This makes static files available at root URL
 CORS(app)
 
@@ -37,7 +55,8 @@ client = OpenAI(
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    user_message = request.json.get('message', '')
+    data = request.json or {}
+    user_message = data.get('message', '')
     if not user_message:
         return jsonify({'response': 'Please ask a question.'})
 
@@ -76,7 +95,7 @@ def static_proxy(path):
 
 @app.route('/feedback', methods=['POST'])
 def feedback():
-    data = request.json
+    data = request.json or {}
     rating = data.get('rating')
     feedback_text = data.get('feedback')
 
@@ -102,7 +121,25 @@ def feedback():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/translate', methods=['POST'])
+
+def translate():
+    data = request.json or {}
+    text = data.get('text', '')
+    target_lang = data.get('target_lang', 'hi')  # Default to Hindi
+    print(f"Received translate request: text='{text[:30]}...', target_lang='{target_lang}'")  # Log input
+
+    if not text:
+        print("No text provided.")
+        return jsonify({'success': False, 'error': 'No text provided'}), 400
+    try:
+        translated = groq_translate(text, target_lang, client)
+        return jsonify({'success': True, 'translated': translated})
+    except Exception as e:
+        print(f"Exception in /translate: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__' and not os.environ.get('RENDER'):
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 4000))
     debug = True
     app.run(host='0.0.0.0', port=port, debug=debug)
